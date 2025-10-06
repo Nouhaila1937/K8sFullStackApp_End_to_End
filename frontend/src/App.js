@@ -4,7 +4,7 @@ import { Trash2, Plus, Check, Circle } from "lucide-react";
 import "./App.css";
 
 // URL qui fonctionne à la fois en local et dans Docker
-const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000/api/tasks";
+const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000/api/tasks";
 
 function App() {
   const [tasks, setTasks] = useState([]);
