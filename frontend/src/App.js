@@ -3,8 +3,12 @@ import axios from "axios";
 import { Trash2, Plus, Check, Circle } from "lucide-react";
 import "./App.css";
 
-// URL qui fonctionne à la fois en local et dans Docker
-const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:3000/api/tasks";
+const isLocal = process.env.NODE_ENV === 'development';
+
+const apiUrl = isLocal 
+    ? "http://localhost:5000/api/tasks" // Local: Accès direct via localhost:5000
+    : "/api/tasks";                      // Docker: Nginx redirige /api/tasks vers le backend
+
 
 function App() {
   const [tasks, setTasks] = useState([]);
