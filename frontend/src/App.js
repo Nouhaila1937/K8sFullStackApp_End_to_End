@@ -3,7 +3,8 @@ import axios from "axios";
 import { Trash2, Plus, Check, Circle } from "lucide-react";
 import "./App.css";
 
-const apiUrl = "http://localhost:3000/api/tasks";
+// URL qui fonctionne à la fois en local et dans Docker
+const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000/api/tasks";
 
 function App() {
   const [tasks, setTasks] = useState([]);
@@ -15,10 +16,13 @@ function App() {
     try {
       setIsLoading(true);
       const res = await axios.get(apiUrl);
-      setTasks(res.data);
+      // Protection : s'assurer que res.data est bien un tableau
+      setTasks(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error("Error fetching tasks:", error);
-      alert("Erreur de connexion au backend. Vérifiez que le serveur est démarré sur le port 3000.");
+      alert("Erreur de connexion au backend. Vérifiez que le serveur est démarré sur le port 5000.");
+      // En cas d'erreur, garder un tableau vide
+      setTasks([]);
     } finally {
       setIsLoading(false);
     }
@@ -68,14 +72,18 @@ function App() {
     }
   };
 
-  const filteredTasks = tasks.filter(task => {
-    if (filter === "active") return !task.completed;
-    if (filter === "completed") return task.completed;
-    return true;
-  });
+  // Protection : vérifier que tasks est un tableau avant .filter()
+  const filteredTasks = Array.isArray(tasks) 
+    ? tasks.filter(task => {
+        if (filter === "active") return !task.completed;
+        if (filter === "completed") return task.completed;
+        return true;
+      })
+    : [];
 
-  const completedCount = tasks.filter(t => t.completed).length;
-  const activeCount = tasks.length - completedCount;
+  // Protection : vérifier que tasks est un tableau avant .filter()
+  const completedCount = Array.isArray(tasks) ? tasks.filter(t => t.completed).length : 0;
+  const activeCount = Array.isArray(tasks) ? tasks.length - completedCount : 0;
 
   return (
     <div className="app-container">
