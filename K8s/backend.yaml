@@ -24,11 +24,10 @@ spec:
           # 🟢 Injecte l'URI complète de MongoDB stockée dans le Secret
           - name: MONGO_URI
             valueFrom:
-              configMapKeyRef:
-                name: mongo-config # Assurez-vous que ce Secret contient la clé MONGO_URI
-                key: MONGO_URI 
-          # Les variables USER_NAME, USER_PWD, DB_URL sont supprimées.
-
+              secretKeyRef:
+                name: mongo-secret # Assurez-vous que ce Secret contient la clé MONGO_URI
+                key: MONGO_URI
+          
 ---
 apiVersion: v1
 kind: Service

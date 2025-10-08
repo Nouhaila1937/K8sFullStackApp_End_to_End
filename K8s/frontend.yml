@@ -17,7 +17,7 @@ spec:
       containers:
         - name: frontend
           # Remplacez ceci par le nom réel de votre image Frontend
-          image: nanga123/k8sfullstackapp_end_to_end-frontend
+          image: nanga123/k8sfullstackapp_end_to_end-frontend:v3
           ports:
             # 💡 Port de Nginx dans le conteneur
             - containerPort: 80 
