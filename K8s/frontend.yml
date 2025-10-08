@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          # Remplacez ceci par le nom réel de votre image Frontend
+          image: nanga123/k8sfullstackapp_end_to_end-frontend
+          ports:
+            # 💡 Port de Nginx dans le conteneur
+            - containerPort: 80 
+          env:
+            # 🟢 L'URL de l'API est relative. L'Ingress gère la redirection /api.
+            - name: REACT_APP_API_URL 
+              value: "/api/tasks" 
+
+---
+# Dans votre frontend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  type: NodePort
+  selector:
+    app: frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    
+  

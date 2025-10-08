@@ -1,0 +1,78 @@
+# 🚀 DEPLOYMENT MONGO (Ajout du PVC)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-deployment
+  labels:
+    app: mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      volumes: # 👈 NOUVEAU: Définition du volume
+        - name: mongo-storage
+          persistentVolumeClaim:
+            claimName: mongo-pvc
+      containers:
+      - name: mongodb
+        image: mongo:5.0
+        ports:
+          - containerPort: 27017
+        volumeMounts: # 👈 NOUVEAU: Montage du volume dans le conteneur
+          - name: mongo-storage
+            mountPath: /data/db
+        env:
+        - name: MONGO_INITDB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: MONGO_URI
+
+        # ... (injection des Secrets inchangée et correcte)
+        #- name: MONGO_INITDB_ROOT_USERNAME
+        # valueFrom:
+         #   secretKeyRef:
+          #    name: mongo-secret
+           #   key: mongo-user
+        #- name: MONGO_INITDB_ROOT_PASSWORD
+         # valueFrom:
+          #  secretKeyRef:
+           #   name: mongo-secret
+            #  key: mongo-password
+
+
+---
+
+# 💾 PERSISTENT VOLUME CLAIM
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongo-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi 
+
+---
+
+# 🌐 SERVICE MONGO (Ajout du type ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  type: ClusterIP # 👈 Mieux d'être explicite
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017

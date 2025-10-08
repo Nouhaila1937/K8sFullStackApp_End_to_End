@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        # Utilisez un nom d'image plus standard que celui de Docker Compose
+        image: nanga123/k8sfullstackapp_end_to_end-backend 
+        ports:
+          - containerPort: 5000
+        env:
+          # 🟢 Injecte l'URI complète de MongoDB stockée dans le Secret
+          - name: MONGO_URI
+            valueFrom:
+              configMapKeyRef:
+                name: mongo-config # Assurez-vous que ce Secret contient la clé MONGO_URI
+                key: MONGO_URI 
+          # Les variables USER_NAME, USER_PWD, DB_URL sont supprimées.
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  type: ClusterIP 
+  selector:
+    app: backend
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
