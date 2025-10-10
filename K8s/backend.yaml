@@ -13,26 +13,32 @@ spec:
     metadata:
       labels:
         app: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: backend
-        # Utilisez un nom d'image plus standard que celui de Docker Compose
-        image: nanga123/k8sfullstackapp_end_to_end-backend 
+        image: nanga123/k8sfullstackapp_end_to_end-backend:v3
         ports:
           - containerPort: 5000
+            name: http
         env:
-          # 🟢 Injecte l'URI complète de MongoDB stockée dans le Secret
           - name: MONGO_URI
             valueFrom:
               secretKeyRef:
-                name: mongo-secret # Assurez-vous que ce Secret contient la clé MONGO_URI
+                name: mongo-secret
                 key: MONGO_URI
-          
+          - name: PORT
+            value: "5000"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
+  labels:
+    app: backend
 spec:
   type: ClusterIP 
   selector:
@@ -41,3 +47,4 @@ spec:
     - protocol: TCP
       port: 5000
       targetPort: 5000
+      name: http
