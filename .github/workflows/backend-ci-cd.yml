@@ -1,43 +1,3 @@
-name: Backend CI/CD
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'Backend/**'
-      - '.github/workflows/backend-ci-cd.yml'
-
-env:
-  DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE_FULL }}
-  KUBERNETES_NAMESPACE: default
-
-jobs:
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: Backend/package-lock.json
-      
-      - name: Install dependencies
-        working-directory: ./Backend
-        run: npm ci
-      
-      - name: Run linter
-        working-directory: ./Backend
-        run: npm run lint || echo "No lint script"
-      
-      - name: Run tests
-        working-directory: ./Backend
-        run: npm test || echo "No tests yet"
-
   build-and-push:
     name: Build and Push Docker Image
     needs: test
@@ -65,10 +25,8 @@ jobs:
         with:
           images: ${{ env.DOCKER_IMAGE }}
           tags: |
-            type=sha,prefix=commit-
-            type=raw,value=${{ github.run_number }}
-            latest
-      
+            v${{ github.run_number }}   # Tag unique incrémental
+          
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
@@ -79,64 +37,3 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             NODE_ENV=production
-
-  # deploy:
-  #   name: Deploy to Kubernetes
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   if: github.ref == 'refs/heads/main'
-  #   
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v3
-  #     
-  #     - name: Setup kubectl
-  #       uses: azure/setup-kubectl@v3
-  #       with:
-  #         version: 'latest'
-  #     
-  #     - name: Configure kubectl
-  #       run: |
-  #         mkdir -p $HOME/.kube
-  #         echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
-  #     
-  #     - name: Update deployment image
-  #       run: |
-  #         IMAGE_TAG="${{ needs.build-and-push.outputs.image-tag }}"
-  #         echo "Deploying image tag: ${IMAGE_TAG}"
-  #         kubectl set image deployment/backend-deployment \
-  #           backend=${{ env.DOCKER_IMAGE }}:${IMAGE_TAG} \
-  #           -n ${{ env.KUBERNETES_NAMESPACE }}
-  #     
-  #     - name: Wait for rollout
-  #       run: |
-  #         kubectl rollout status deployment/backend-deployment \
-  #           -n ${{ env.KUBERNETES_NAMESPACE }} \
-  #           --timeout=5m
-
-      
-  #   - name: Verify deployment
-   #      run: |
-     #      kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }} -l app=backend
-      
-     #  - name: Rollback on failure
-      #   if: failure()
-      #   run: |
-      #     kubectl rollout undo deployment/backend-deployment \
-       #      -n ${{ env.KUBERNETES_NAMESPACE }}
-        #   echo "⚠️ Deployment failed, rolled back to previous version"
-
-  notify:
-    name: Send Notification
-    needs: [test, build-and-push]
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-      - name: Notify success
-        if: ${{ needs.deploy.result == 'success' }}
-        run: echo "✅ Deployment successful!"
-      
-      - name: Notify failure
-        if: ${{ needs.deploy.result != 'success' }}
-        run: echo "❌ Deployment failed!"
