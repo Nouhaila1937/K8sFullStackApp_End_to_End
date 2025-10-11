@@ -1,0 +1,92 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: backend-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: backend-app
+      rules:
+        - alert: BackendDown
+          expr: up{job="backend-service"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Backend API is DOWN"
+            description: "Backend has been down for more than 1 minute"
+        
+        - alert: BackendHighMemory
+          expr: (nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend memory usage is high"
+            description: "Backend is using {{ $value | humanizePercentage }} of heap"
+        
+        # Alerte CPU pour le processus Node.js
+        - alert: BackendHighCPU
+          expr: rate(process_cpu_user_seconds_total{job="backend-service"}[5m]) > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend CPU usage is high"
+            description: "Backend process is using {{ $value | humanizePercentage }} CPU (user mode)"
+        
+        # Alerte CPU critique
+        - alert: BackendCriticalCPU
+          expr: rate(process_cpu_user_seconds_total{job="backend-service"}[5m]) > 0.95
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Backend CPU usage is CRITICAL"
+            description: "Backend process CPU usage is at {{ $value | humanizePercentage }}"
+        
+        # Alerte CPU au niveau du Pod (Kubernetes)
+        - alert: BackendPodHighCPU
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{pod=~"backend-deployment.*", container="backend"}[5m])) 
+            / 
+            sum(container_spec_cpu_quota{pod=~"backend-deployment.*", container="backend"} 
+            / container_spec_cpu_period{pod=~"backend-deployment.*", container="backend"}) > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend Pod CPU usage is high"
+            description: "Backend pod is using {{ $value | humanizePercentage }} of CPU limit"
+        
+        # Event Loop Lag (important pour Node.js!)
+        - alert: BackendEventLoopLag
+          expr: nodejs_eventloop_lag_seconds{job="backend-service"} > 0.1
+          for: 3m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend Event Loop is lagging"
+            description: "Event loop lag is {{ $value }}s, application may be overloaded"
+        
+        # Event Loop Lag critique
+        - alert: BackendEventLoopLagCritical
+          expr: nodejs_eventloop_lag_seconds{job="backend-service"} > 1
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Backend Event Loop SEVERELY lagging"
+            description: "Event loop lag is {{ $value }}s - CRITICAL performance issue"
+        
+        # Requêtes actives élevées
+        - alert: BackendHighActiveRequests
+          expr: nodejs_active_handles_total{job="backend-service"} > 100
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Backend has high number of active requests"
+            description: "Backend has {{ $value }} active handlers"

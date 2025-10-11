@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend-monitor
+  namespace: monitoring  # ← Dans namespace monitoring (avec Prometheus)
+  labels:
+    release: monitoring  # ← Label que Prometheus cherche
+spec:
+  selector:
+    matchLabels:
+      app: backend  # ← Cherche le Service avec ce label
+  namespaceSelector:
+    matchNames:
+      - default  # ← Va chercher dans le namespace default
+  endpoints:
+    - port: http  # ← Utilise le port nommé "http"
+      path: /metrics  # ← Endpoint à scraper
+      interval: 15s  # ← Scrape toutes les 15 secondes
