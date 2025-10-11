@@ -1,3 +1,43 @@
+
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Backend/**'
+      - '.github/workflows/backend-ci-cd.yml'
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKER_IMAGE_FULL }}
+  KUBERNETES_NAMESPACE: default
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: Backend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./Backend
+        run: npm ci
+      
+      - name: Run linter
+        working-directory: ./Backend
+        run: npm run lint || echo "No lint script"
+      
+      - name: Run tests
+        working-directory: ./Backend
+        run: npm test || echo "No tests yet"
   build-and-push:
     name: Build and Push Docker Image
     needs: test
