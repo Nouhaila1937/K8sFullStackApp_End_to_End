@@ -11,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 const collectDefaultMetrics= client.collectDefaultMetrics;
-collectDefaultMetrics({timeout:5000});
+collectDefaultMetrics({timeout:6000});
 
 app.get("/metrics",async(req,res)=>{
   res.set("Content-type",client.register.contentType);
