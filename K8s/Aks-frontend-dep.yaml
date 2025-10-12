@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment-front-cloud
+  labels:
+    app: aks-deployment-front
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aks-deployment-front
+  template:
+    metadata:
+      labels:
+        app: aks-deployment-front
+    spec:
+      containers:
+      - image: merntaskacr.azurecr.io/frontend:v4
+        name: frontend
+        ports:
+        - containerPort: 80
+        env:
+        - name: REACT_APP_API_URL
+          value: "http://backend-service-aks:5000/api/tasks"
+        resources: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service-aks
+  labels:
+    app: aks-deployment-front
+spec:
+  type: LoadBalancer
+  selector:
+    app: aks-deployment-front
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
